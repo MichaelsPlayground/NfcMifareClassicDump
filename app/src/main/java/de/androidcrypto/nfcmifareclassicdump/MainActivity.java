@@ -41,10 +41,9 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
     TextView dumpField, readResult;
     private NfcAdapter mNfcAdapter;
     String dumpExportString = "";
-    String tagIdString = "";
-    String tagTypeString = "";
     private static final int REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE = 100;
     Context contextSave;
+    private String tagIdString;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -91,6 +90,7 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
                 v.vibrate(200);
             }
 
+            dumpExportString = "";
             runOnUiThread(() -> {
                 readResult.setText("");
             });
@@ -122,8 +122,8 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
                     }
                     String dumpContentHeader = "Card content:\n" + HexDumpOwn.prettyPrint(cardMemoryBytes);
                     writeToUiAppend(readResult, dumpContentHeader);
-
-
+                    dumpExportString = dumpContentHeader;
+                    tagIdString = Utils.bytesToHex(tag.getId());
                 }
                 mif.close();
 
@@ -156,6 +156,7 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
                     " total memory: " + ntagMemoryBytes +
                     " bytes\n" +
                     "tag ID: " + bytesToHex(NfcIdentifyNtag.getIdentifiedNtagId()) + "\n" +*/
+/*
             String nfcaContent = "raw data MifareClassic " +
                     "tag ID: " + tagIdString + "\n";
             //nfcaContent = nfcaContent + "maxTranceiveLength: " + nfcaMaxTranceiveLength + " bytes\n";
@@ -177,7 +178,7 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
             writeToUiAppend(readResult, nfcaContent);
             writeToUiAppend(readResult, dumpContentHeader);
 
-
+*/
             /*
 
             int footerStart = 4 + ntagPages;
@@ -288,23 +289,6 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
         return returnBytes;
     }
 
-    public static String bytesToHex(byte[] bytes) {
-        StringBuffer result = new StringBuffer();
-        for (byte b : bytes) result.append(Integer.toString((b & 0xff) + 0x100, 16).substring(1));
-        return result.toString();
-    }
-
-    private String getDec(byte[] bytes) {
-        long result = 0;
-        long factor = 1;
-        for (int i = 0; i < bytes.length; ++i) {
-            long value = bytes[i] & 0xffl;
-            result += value * factor;
-            factor *= 256l;
-        }
-        return result + "";
-    }
-
     private void writeToUiAppend(TextView textView, String message) {
         runOnUiThread(() -> {
             String newString = message + "\n" + textView.getText().toString();
@@ -320,39 +304,6 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
         });
     }
 
-    private byte[] getFastTagDataRange(MifareClassic nfcA, int fromPage, int toPage) {
-        byte[] response;
-        byte[] command = new byte[]{
-                (byte) 0x3A,  // FAST_READ
-                (byte) (fromPage & 0x0ff),
-                (byte) (toPage & 0x0ff),
-        };
-        try {
-            response = nfcA.transceive(command); // response should be 16 bytes = 4 pages
-            if (response == null) {
-                // either communication to the tag was lost or a NACK was received
-                writeToUiAppend(readResult, "ERROR on reading page");
-                return null;
-            } else if ((response.length == 1) && ((response[0] & 0x00A) != 0x00A)) {
-                // NACK response according to Digital Protocol/T2TOP
-                writeToUiAppend(readResult, "ERROR NACK received");
-                // Log and return
-                return null;
-            } else {
-                // success: response contains ACK or actual data
-            }
-        } catch (TagLostException e) {
-            // Log and return
-            writeToUiAppend(readResult, "ERROR Tag lost exception");
-            return null;
-        } catch (IOException e) {
-            writeToUiAppend(readResult, "ERROR IOException: " + e);
-            e.printStackTrace();
-            return null;
-        }
-        return response;
-    }
-
     private void showWirelessSettings() {
         Toast.makeText(this, "You need to enable NFC", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(Settings.ACTION_WIRELESS_SETTINGS);
@@ -364,7 +315,7 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
             writeToUiToast("Scan a tag first before sending emails :-)");
             return;
         }
-        String subject = "Dump NFC-Tag " + tagTypeString + " UID: " + tagIdString;
+        String subject = "Dump NFC-Tag " + "UID: " + tagIdString;
         String body = dumpExportString;
         Intent intent = new Intent(Intent.ACTION_SEND);
         intent.setType("text/plain");
@@ -408,7 +359,7 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
         //boolean pickerInitialUri = false;
         //intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, pickerInitialUri);
         // get filename from edittext
-        String filename = tagTypeString + "_" + tagIdString + ".txt";
+        String filename = "tag" + "_" + tagIdString + ".txt";
         // sanity check
         if (filename.equals("")) {
             writeToUiToast("scan a tag before writng the content to a file :-)");
