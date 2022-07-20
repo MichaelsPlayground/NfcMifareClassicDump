@@ -350,13 +350,7 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
             ActivityCompat.requestPermissions(this,
                     permissions,
                     REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE);
-            if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
-                    permissions[0]) == PackageManager.PERMISSION_GRANTED
-                    && ContextCompat.checkSelfPermission(this.getApplicationContext(),
-                    permissions[1]) == PackageManager.PERMISSION_GRANTED) {
-                System.out.println("### now writeStringToExternalSharedStorage ###");
-                writeStringToExternalSharedStorage();
-            }
+
         }
     }
 
