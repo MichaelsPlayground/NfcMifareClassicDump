@@ -331,6 +331,7 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
             writeToUiToast("Scan a tag first before writing files :-)");
             return;
         }
+        System.out.println("### verify permission for writing to external storage ###");
         verifyPermissionsWriteString();
     }
 
@@ -342,11 +343,20 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
                 permissions[0]) == PackageManager.PERMISSION_GRANTED
                 && ContextCompat.checkSelfPermission(this.getApplicationContext(),
                 permissions[1]) == PackageManager.PERMISSION_GRANTED) {
+            System.out.println("### now writeStringToExternalSharedStorage ###");
             writeStringToExternalSharedStorage();
         } else {
+            System.out.println("### asking permissions for writeStringToExternalSharedStorage ###");
             ActivityCompat.requestPermissions(this,
                     permissions,
                     REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE);
+            if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                    permissions[0]) == PackageManager.PERMISSION_GRANTED
+                    && ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                    permissions[1]) == PackageManager.PERMISSION_GRANTED) {
+                System.out.println("### now writeStringToExternalSharedStorage ###");
+                writeStringToExternalSharedStorage();
+            }
         }
     }
 
@@ -362,8 +372,10 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
         String filename = "tag" + "_" + tagIdString + ".txt";
         // sanity check
         if (filename.equals("")) {
-            writeToUiToast("scan a tag before writng the content to a file :-)");
+            writeToUiToast("scan a tag before writing the content to a file :-)");
             return;
+        } else {
+            writeToUiToast("trying to save the dumped content to file " + filename);
         }
         intent.putExtra(Intent.EXTRA_TITLE, filename);
         fileSaverActivityResultLauncher.launch(intent);
