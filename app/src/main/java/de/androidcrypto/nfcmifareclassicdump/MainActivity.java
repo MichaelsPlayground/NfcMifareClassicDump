@@ -1,7 +1,6 @@
 package de.androidcrypto.nfcmifareclassicdump;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -9,15 +8,12 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
-import android.nfc.TagLostException;
 import android.nfc.tech.MifareClassic;
-import android.nfc.tech.NfcA;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.provider.Settings;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
@@ -27,9 +23,8 @@ import androidx.activity.result.ActivityResult;
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.appcompat.widget.Toolbar;
-
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -73,7 +68,6 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
         MifareClassic mif = null;
 
         mif = MifareClassic.get(tag);
-        //nfcA = NfcA.get(tag);
 
         if (mif != null) {
             runOnUiThread(() -> {
@@ -131,119 +125,6 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
                 writeToUiAppend(readResult, "IOException: " + e);
                 e.printStackTrace();
             }
-
-/*
-            // check that the tag is a NTAG213/215/216 manufactured by NXP - stop if not
-            String ntagVersion = NfcIdentifyNtag.checkNtagType(nfcA, tag.getId());
-            if (ntagVersion.equals("0")) {
-                runOnUiThread(() -> {
-                    readResult.setText("NFC tag is NOT of type NXP NTAG213/215/216");
-                    Toast.makeText(getApplicationContext(),
-                            "NFC tag is NOT of type NXP NTAG213/215/216",
-                            Toast.LENGTH_SHORT).show();
-                });
-                return;
-            }
-*/
-            /*
-            int nfcaMaxTranceiveLength = nfcA.getMaxTransceiveLength(); // important for the readFast command
-            int ntagPages = NfcIdentifyNtag.getIdentifiedNtagPages();
-            int ntagMemoryBytes = NfcIdentifyNtag.getIdentifiedNtagMemoryBytes();
-            tagIdString = getDec(tag.getId());
-            tagTypeString = NfcIdentifyNtag.getIdentifiedNtagType();
-            String nfcaContent = "raw data of " + tagTypeString + "\n" +
-                    "number of pages: " + ntagPages +
-                    " total memory: " + ntagMemoryBytes +
-                    " bytes\n" +
-                    "tag ID: " + bytesToHex(NfcIdentifyNtag.getIdentifiedNtagId()) + "\n" +*/
-/*
-            String nfcaContent = "raw data MifareClassic " +
-                    "tag ID: " + tagIdString + "\n";
-            //nfcaContent = nfcaContent + "maxTranceiveLength: " + nfcaMaxTranceiveLength + " bytes\n";
-            // read the complete memory depending on ntag type
-            byte[] headerMemory = new byte[16]; // 4 pages of each 4 bytes, e.g. manufacturer data
-            byte[] ntagMemory = new byte[16]; // user memory, 888 byte for a NTAG216
-            byte[] footerMemory = new byte[20]; // 5 pages, e.g. dyn. lock bytes, configuration pages, password & pack
-
-            // read the content of the tag in several runs
-
-            // first we are reading the header
-            System.out.println("reading the header");
-            headerMemory = getFastTagDataRange(mif, 0, 3);
-            if (headerMemory == null) {
-                writeToUiAppend(readResult, "ERROR on reading header, aborted");
-            }
-            String dumpContentHeader = "Header content:\n" + HexDumpOwn.prettyPrint(headerMemory);
-
-            writeToUiAppend(readResult, nfcaContent);
-            writeToUiAppend(readResult, dumpContentHeader);
-
-*/
-            /*
-
-            int footerStart = 4 + ntagPages;
-            int footerEnd = 4 + footerStart;
-            System.out.println("reading the footer");
-            footerMemory = getFastTagDataRange(nfcA, footerStart, footerEnd);
-            if (footerMemory == null) {
-                writeToUiAppend(readResult, "ERROR on reading footer, aborted");
-            }
-            String dumpContentFooter = "Footer content:\n" + HexDumpOwn.prettyPrint(footerMemory);
-
-            byte[] response;
-            try {
-                //int nfcaMaxTranceiveLength = nfcA.getMaxTransceiveLength(); // my device: 253 bytes
-                int nfcaMaxTranceive4ByteTrunc = nfcaMaxTranceiveLength / 4; // 63
-                int nfcaMaxTranceive4ByteLength = nfcaMaxTranceive4ByteTrunc * 4; // 252 bytes
-                int nfcaNrOfFullReadings = ntagMemoryBytes / nfcaMaxTranceive4ByteLength; // 888 bytes / 252 bytes = 3 full readings
-                int nfcaTotalFullReadingBytes = nfcaNrOfFullReadings * nfcaMaxTranceive4ByteLength; // 3 * 252 = 756
-                int nfcaMaxTranceiveModuloLength = ntagMemoryBytes - nfcaTotalFullReadingBytes; // 888 bytes - 756 bytes = 132 bytes
-                nfcaContent = nfcaContent + "nfcaMaxTranceive4ByteTrunc: " + nfcaMaxTranceive4ByteTrunc + "\n";
-                nfcaContent = nfcaContent + "nfcaMaxTranceive4ByteLength: " + nfcaMaxTranceive4ByteLength + "\n";
-                nfcaContent = nfcaContent + "nfcaNrOfFullReadings: " + nfcaNrOfFullReadings + "\n";
-                nfcaContent = nfcaContent + "nfcaTotalFullReadingBytes: " + nfcaTotalFullReadingBytes + "\n";
-                nfcaContent = nfcaContent + "nfcaMaxTranceiveModuloLength: " + nfcaMaxTranceiveModuloLength + "\n";
-
-                for (int i = 0; i < nfcaNrOfFullReadings; i++) {
-                    System.out.println("starting round: " + i);
-                    response = getFastTagDataRange(nfcA, (4 + (nfcaMaxTranceive4ByteTrunc * i)), (4 + (nfcaMaxTranceive4ByteTrunc * (i + 1)) - 1));
-                    if (response == null) {
-                        writeToUiAppend(readResult, "ERROR on reading user memory, aborted");
-                    } else {
-                        // success: response contains ACK or actual data
-                        System.arraycopy(response, 0, ntagMemory, (nfcaMaxTranceive4ByteLength * i), nfcaMaxTranceive4ByteLength);
-                    }
-                } // for
-
-                // now we read the nfcaMaxTranceiveModuloLength bytes, for a NTAG216 = 132 bytes
-                response = getFastTagDataRange(nfcA, (4 + (nfcaMaxTranceive4ByteTrunc * nfcaNrOfFullReadings)), (4 + (nfcaMaxTranceive4ByteTrunc * nfcaNrOfFullReadings) + (nfcaMaxTranceiveModuloLength / 4)));
-                if (response == null) {
-                    writeToUiAppend(readResult, "ERROR on reading user memory, aborted");
-                } else {
-                    // success: response contains ACK or actual data
-                    System.arraycopy(response, 0, ntagMemory, (nfcaMaxTranceive4ByteLength * nfcaNrOfFullReadings), nfcaMaxTranceiveModuloLength);
-                }
-                nfcaContent = nfcaContent + "fast reading complete: " + "\n" + bytesToHex(ntagMemory) + "\n";
-
-                String finalNfcaRawText = nfcaContent;
-                String dumpContent = dumpContentHeader + "\n\nUser memory content:\n" + HexDumpOwn.prettyPrint(ntagMemory);
-                dumpContent = dumpContent + "\n\n" + dumpContentFooter;
-                System.out.println(dumpContent);
-                dumpExportString = dumpContent;
-                String finalDumpContent = dumpContent;
-                runOnUiThread(() -> {
-                    dumpField.setText(finalDumpContent);
-                    readResult.setText(finalNfcaRawText);
-                    System.out.println(finalNfcaRawText);
-                });
-
-            } finally {
-                try {
-                    nfcA.close();
-                } catch (IOException e) {
-                    writeToUiAppend(readResult, "ERROR IOException: " + e);
-                }
-            } */
         }
     }
 
@@ -331,7 +212,6 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
             writeToUiToast("Scan a tag first before writing files :-)");
             return;
         }
-        System.out.println("### verify permission for writing to external storage ###");
         verifyPermissionsWriteString();
     }
 
@@ -343,10 +223,8 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
                 permissions[0]) == PackageManager.PERMISSION_GRANTED
                 && ContextCompat.checkSelfPermission(this.getApplicationContext(),
                 permissions[1]) == PackageManager.PERMISSION_GRANTED) {
-            System.out.println("### now writeStringToExternalSharedStorage ###");
             writeStringToExternalSharedStorage();
         } else {
-            System.out.println("### asking permissions for writeStringToExternalSharedStorage ###");
             ActivityCompat.requestPermissions(this,
                     permissions,
                     REQUEST_PERMISSION_WRITE_EXTERNAL_STORAGE);
@@ -393,7 +271,6 @@ public class MainActivity extends AppCompatActivity implements NfcAdapter.Reader
                                 // get file content from edittext
                                 String fileContent = dumpExportString;
                                 writeTextToUri(uri, fileContent);
-                                String message = "file written to external shared storage: " + uri.toString();
                                 writeToUiToast("file written to external shared storage: " + uri.toString());
                             } catch (IOException e) {
                                 e.printStackTrace();
